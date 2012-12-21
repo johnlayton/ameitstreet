@@ -115,7 +115,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		}
 
 		this._map.fire(
-			'draw:poly-created',
+			'draw:polyline-created',
 			{ poly: new this.Poly(this._poly.getLatLngs(), this.options.shapeOptions) }
 		);
 		this.disable();
