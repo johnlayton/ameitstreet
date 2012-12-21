@@ -4,6 +4,7 @@ L.Draw.Marker = L.Draw.Feature.extend({
 	},
 
 	options: {
+    name: 'marker',
 		icon: new L.Icon.Default(),
 		zIndexOffset: 2000 // This should be > than the highest z-index any markers
 	},

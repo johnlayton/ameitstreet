@@ -6,6 +6,7 @@ L.Draw.Polygon = L.Draw.Polyline.extend({
 	Poly: L.Polygon,
 
 	options: {
+    name: 'polygon',
 		shapeOptions: {
 			stroke: true,
 			color: '#f06eaa',

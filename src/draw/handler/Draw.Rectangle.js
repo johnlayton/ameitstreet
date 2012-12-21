@@ -4,6 +4,7 @@ L.Draw.Rectangle = L.Draw.SimpleShape.extend({
 	},
 
 	options: {
+    name: 'rectangle',
 		shapeOptions: {
 			stroke: true,
 			color: '#f06eaa',

@@ -6,21 +6,33 @@ L.Control.Draw = L.Control.Toolbar.extend({
 
 	options: {
 		position: 'topleft',
-		polyline: {
-			title: 'Draw a polyline'
-		},
-		polygon: {
-			title: 'Draw a polygon'
-		},
-		rectangle: {
-			title: 'Draw a rectangle'
-		},
-		circle: {
-			title: 'Draw a circle'
-		},
-		marker: {
-			title: 'Add a marker'
-		}
+    shapes: [
+      {
+        name: 'polyline',
+        type: 'polyline',
+        title: 'Draw a polyline'
+      },
+      {
+        name: 'polygon',
+        type: 'polygon',
+        title: 'Draw a polygon'
+      },
+      {
+        name: 'rectangle',
+        type: 'rectangle',
+        title: 'Draw a rectangle'
+      },
+      {
+        name: 'circle',
+        type: 'circle',
+        title: 'Draw a circle'
+      },
+      {
+        name: 'marker',
+        type: 'marker',
+        title: 'Add a marker'
+      }
+    ]
 	},
 	
 	onAdd: function (map) {
@@ -29,53 +41,40 @@ L.Control.Draw = L.Control.Toolbar.extend({
 
 		this._toolbarContainer = L.DomUtil.create('div', 'leaflet-control-toolbar');
 
+    this.handlers = {};
 
-		if (this.options.polyline) {
-			this._initModeHandler(
-				new L.Draw.Polyline(map, this.options.polyline),
-				this._toolbarContainer,
-				buttonIndex++,
-				'leaflet-control-draw'
-			);
-		}
+    for (var i = 0; i < this.options.shapes.length; i++) {
+      var options = this.options.shapes[i];
 
-		if (this.options.polygon) {
-			this._initModeHandler(
-				new L.Draw.Polygon(map, this.options.polygon),
-				this._toolbarContainer,
-				buttonIndex++,
-				'leaflet-control-draw'
-			);
-		}
+      if (options.type === 'polyline') {
+        handler = new L.Draw.Polyline(map, options);
 
-		if (this.options.rectangle) {
-			this._initModeHandler(
-				new L.Draw.Rectangle(map, this.options.rectangle),
-				this._toolbarContainer,
-				buttonIndex++,
-				'leaflet-control-draw'
-			);
-		}
+      } else if (options.type === 'polygon') {
+        handler = new L.Draw.Polygon(map, options);
 
-		if (this.options.circle) {
-			this._initModeHandler(
-				new L.Draw.Circle(map, this.options.circle),
-				this._toolbarContainer,
-				buttonIndex++,
-				'leaflet-control-draw'
-			);
-		}
+      } else if (options.type === 'rectangle') {
+        handler = new L.Draw.Rectangle(map, options);
 
-		if (this.options.marker) {
-			this._initModeHandler(
-				new L.Draw.Marker(map, this.options.marker),
-				this._toolbarContainer,
-				buttonIndex++,
-				'leaflet-control-draw'
-			);
-		}
+      } else if (options.type === 'circle') {
+        handler = new L.Draw.Circle(map, options);
 
-		// Save button index of the last button, -1 as we would have ++ after the last button
+      } else if (options.type === 'marker') {
+        handler = new L.Draw.Marker(map, options);
+
+      } else {
+        continue;
+      }
+
+      this._initModeHandler(
+//        options,
+        handler,
+        this._toolbarContainer,
+        buttonIndex++,
+        'leaflet-control-draw'
+      );
+    }
+
+      // Save button index of the last button, -1 as we would have ++ after the last button
 		this._lastButtonIndex = --buttonIndex;
 
 		// Create the actions part of the toolbar

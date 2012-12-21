@@ -6,6 +6,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 	Poly: L.Polyline,
 
 	options: {
+    name: 'polyline',
 		allowIntersection: true,
 		drawError: {
 			color: '#b00b00',

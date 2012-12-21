@@ -13,6 +13,7 @@ L.Draw.Feature = L.Handler.extend({
 		if (options && options.shapeOptions) {
 			options.shapeOptions = L.Util.extend({}, this.options.shapeOptions, options.shapeOptions);
 		}
+//    L.Util.setOptions(this, options);
 		L.Util.extend(this.options, options);
 	},
 

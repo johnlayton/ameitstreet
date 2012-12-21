@@ -1,5 +1,6 @@
 L.Control.Toolbar = L.Control.extend({
-	initialize: function (options) {
+
+  initialize: function (options) {
 		L.Util.extend(this.options, options);
 
 		this._modes = {};
@@ -13,7 +14,9 @@ L.Control.Toolbar = L.Control.extend({
 		this._modes[type].handler = handler;
 
 		this._modes[type].button = this._createButton({
-			title: this.options[type].title,
+//			title: this.options[type].title,
+//			title: options.title,
+			title: handler.options.title,
 			className: classNamePredix + '-' + type,
 			container: container,
 			callback: this._modes[type].handler.enable,
