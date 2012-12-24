@@ -23,8 +23,16 @@ L.Draw.Marker = L.Draw.Feature.extend({
       this._tooltip.updateContent({
         text: (L.Browser.touch ? 'Tap' : 'Click') + ' map to place marker.'
       });
+
+//      this._map
+//        .on('mousedown', this._onMouseDown, this)
+//        .on('mousemove', this._onMouseMove, this);
+
       L.DomEvent.addListener(this._container, 'mousemove', this._onMouseMove, this);
       if (L.Browser.touch) {
+//        this._map
+//          .on('touchmove', this._onMouseMove, this)
+//          .on('touchend', this._onClick, this);
         L.DomEvent.addListener(this._container, 'touchmove', this._onMouseMove, this);
         L.DomEvent.addListener(this._container, 'touchend', this._onClick, this);
       }
@@ -57,15 +65,18 @@ L.Draw.Marker = L.Draw.Feature.extend({
   },
 
 	_onMouseMove: function (e) {
-    var newPos = this._map.mouseEventToLayerPoint(e.touches ? e.touches[0] : e),
-      latlng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+
+    var latlng = e.latlng;
+
+//    var newPos = this._map.mouseEventToLayerPoint(e.touches ? e.touches[0] : e),
+//        latlng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
 
     if (e.touches) {
       // This is necessary to stop the map from panning
       L.DomEvent.stopPropagation(e);
     }
 
-    this._tooltip.updatePosition(newPos);
+    this._tooltip.updatePosition(latlng);
 
     if (!this._marker) {
       this._marker = new L.Marker(latlng, this.options.icon);

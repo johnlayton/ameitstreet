@@ -44,8 +44,6 @@ L.Control.Draw = L.Control.Toolbar.extend({
 
     this.handlers = {};
 
-
-
     for (var i = 0; i < this.options.shapes.length; i++) {
       var options = this.options.shapes[i];
 
