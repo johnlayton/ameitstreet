@@ -66,7 +66,6 @@ L.Control.Draw = L.Control.Toolbar.extend({
       }
 
       this._initModeHandler(
-//        options,
         handler,
         this._toolbarContainer,
         buttonIndex++,

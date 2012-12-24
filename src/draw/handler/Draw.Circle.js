@@ -25,7 +25,6 @@ L.Draw.Circle = L.Draw.SimpleShape.extend({
 	},
 
   _initialLabelText: (L.Browser.touch ? 'Tap' : 'Click') + ' and drag to draw circle.',
-//	_initialLabelText: 'Click and drag to draw circle.',
 
 	_drawShape: function (latlng) {
 		if (!this._shape) {

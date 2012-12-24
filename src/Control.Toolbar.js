@@ -14,8 +14,6 @@ L.Control.Toolbar = L.Control.extend({
 		this._modes[type].handler = handler;
 
 		this._modes[type].button = this._createButton({
-//			title: this.options[type].title,
-//			title: options.title,
 			title: handler.options.title,
 			className: classNamePredix + '-' + type,
 			container: container,
