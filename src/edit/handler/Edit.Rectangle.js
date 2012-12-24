@@ -8,9 +8,9 @@ L.Edit.Rectangle = L.Edit.SimpleShape.extend({
 
 	_createResizeMarker: function () {
 		var bounds = this._shape.getBounds(),
-			resizemarkerPoint = bounds.getNorthEast();
+			  point = bounds.getNorthEast();
 
-		this._resizeMarker = this._createMarker(resizemarkerPoint, this.options.resizeIcon);
+		this._resizeMarker = this._createMarker(point, this.options.resizeIcon);
 	},
 
 	_onMarkerDragEnd: function (e) {

@@ -32,9 +32,13 @@ L.Control.Toolbar = L.Control.extend({
 		var link = L.DomUtil.create('a', options.className || '', options.container);
 		link.href = '#';
 
-		if (options.text) link.innerHTML = options.text;
+		if (options.text) {
+      link.innerHTML = options.text;
+    }
 
-		if (options.title) link.title = options.title;
+		if (options.title) {
+      link.title = options.title;
+    }
 
 		L.DomEvent
 			.on(link, 'click', L.DomEvent.stopPropagation)

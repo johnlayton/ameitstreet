@@ -38,7 +38,7 @@ exports.config = {
 	"onevar": false,
 	"plusplus": false,
 	"sub": false,
-	"indent": 4,
+	"indent": 2,
 
 	"eqeqeq": true,
 	"trailing": true,

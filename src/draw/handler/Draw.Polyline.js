@@ -128,7 +128,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		return true;
 	},
 	
-	_onZoomEnd: function(e) {
+	_onZoomEnd: function (e) {
 		this._updateGuide();
 	},
 	
@@ -203,7 +203,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		return marker;
 	},
 	
-	_updateGuide: function(newPos) {
+	_updateGuide: function (newPos) {
 		newPos = newPos || this._map.latLngToLayerPoint(this._currentLatLng);
 		
 		var markerCount = this._markers.length;

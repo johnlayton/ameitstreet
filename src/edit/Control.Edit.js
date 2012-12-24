@@ -62,7 +62,8 @@ L.Control.Edit = L.Control.Toolbar.extend({
 				text: 'Save',
 				callback: this._save,
 				context: this
-			},{
+			},
+      {
 				title: 'Cancel editing, discards all changes.',
 				text: 'Cancel',
 				callback: this._cancel,

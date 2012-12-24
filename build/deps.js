@@ -1,11 +1,11 @@
 var deps = {
 	Core: {
 		src: [
-			'ext/LineUtil.js',
-			'ext/Polyline.js',
-			'ext/Polygon.js',
+			'ext/LineUtil.Intersect.js',
+			'ext/Polyline.Intersect.js',
+			'ext/Polygon.Intersect.js',
 			'Tooltip.js',
-			'Control.Toolbar.js',
+			'Control.Toolbar.js'
 		],
 		desc: 'The core of the plugin.'
 	},
@@ -13,13 +13,12 @@ var deps = {
 	Draw: {
 		src: [
 			'draw/Control.Draw.js',
-			'draw/Handler.Draw.js',
-			'draw/shapes/Polyline.Draw.js',
-			'draw/shapes/Polygon.Draw.js',
-			'draw/shapes/SimpleShape.Draw.js',
-			'draw/shapes/Circle.Draw.js',
-			'draw/shapes/Rectangle.Draw.js',
-			'draw/shapes/Marker.Draw.js'
+			'draw/handler/Draw.Polyline.js',
+			'draw/handler/Draw.Polygon.js',
+			'draw/handler/Draw.SimpleShape.js',
+			'draw/handler/Draw.Circle.js',
+			'draw/handler/Draw.Rectangle.js',
+			'draw/handler/Draw.Marker.js'
 		],
 		desc: 'Drawing tools used to create vectors and markers.',
 		deps: ['Core']
@@ -27,7 +26,12 @@ var deps = {
 
 	Edit: {
 		src: [
-			'TODO'
+      'edit/Control.Edit.js',
+      'edit/handler/Delete.Feature.js',
+      'edit/handler/Edit.Circle.js',
+      'edit/handler/Edit.Feature.js',
+      'edit/handler/Edit.Rectangle.js',
+      'edit/handler/Edit.SimpleShape.js'
 		],
 		desc: 'Editing tools used to edit and delete vectors and markers.',
 		deps: ['Core']

@@ -47,11 +47,15 @@ L.Edit.Feature = L.Handler.extend({
 			.on('layeradd', this._enableLayerEdit, this)
 			.on('layerremove', this._disableLayerEdit, this);
 
-		this.fire('enabled', { handler: this.type} );
+		this.fire('enabled', {
+      handler: this.type
+    });
 	},
 
 	disable: function () {
-		this.fire('disabled', { handler: this.type} );
+		this.fire('disabled', {
+      handler: this.type
+    });
 
 		this._featureGroup
 			.off('layeradd', this._enableLayerEdit)

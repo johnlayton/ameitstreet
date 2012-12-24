@@ -1,5 +1,5 @@
 var build = require('./build/build.js'),
-	lint = require('./build/hint.js');
+	   lint = require('./build/hint.js');
 
 var COPYRIGHT = '/*\n Copyright (c) 2012, Smartrak, Jacob Toye\n' +
 	' Leaflet.draw is an open-source JavaScript library for drawing shapes/markers on leaflet powered maps.\n' +
@@ -49,8 +49,8 @@ task('build', ['lint'], function () {
 	console.log('Compressing...');
 
 	var oldCompressed = build.load(path),
-		newCompressed = COPYRIGHT + build.uglify(content),
-		delta = build.getSizeDelta(newCompressed, oldCompressed);
+		  newCompressed = COPYRIGHT + build.minify(srcPath).code,
+		  delta = build.getSizeDelta(newCompressed, oldCompressed);
 
 	console.log('\tCompressed size: ' + newCompressed.length + ' bytes (' + delta + ')');
 

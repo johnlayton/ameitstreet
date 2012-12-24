@@ -1,5 +1,5 @@
 L.Map.mergeOptions({
-	drawControl: false
+  drawControl: false
 });
 
 L.Control.Draw = L.Control.Toolbar.extend({
@@ -37,11 +37,14 @@ L.Control.Draw = L.Control.Toolbar.extend({
 	
 	onAdd: function (map) {
 		var container = L.DomUtil.create('div', ''),
-			buttonIndex = 0;
+			  buttonIndex = 0,
+        handler;
 
 		this._toolbarContainer = L.DomUtil.create('div', 'leaflet-control-toolbar');
 
     this.handlers = {};
+
+
 
     for (var i = 0; i < this.options.shapes.length; i++) {
       var options = this.options.shapes[i];

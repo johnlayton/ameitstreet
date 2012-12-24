@@ -1,22 +1,23 @@
 L.Edit.Circle = L.Edit.SimpleShape.extend({
+
 	_createMoveMarker: function () {
 		var center = this._shape.getLatLng();
 
 		this._moveMarker = this._createMarker(center, this.options.moveIcon);
 	},
 
-	_createResizeMarker: function () {
+  _getResizeMarkerPoint: function (latlng) {
+    // From L.shape.getBounds()
+    var delta = this._shape._radius * Math.cos(Math.PI / 4),
+        point = this._shape._map.project(latlng);
+    return this._shape._map.unproject([point.x + delta, point.y - delta]);
+  },
+
+  _createResizeMarker: function () {
 		var center = this._shape.getLatLng(),
 			resizemarkerPoint = this._getResizeMarkerPoint(center);
 
 		this._resizeMarker = this._createMarker(resizemarkerPoint, this.options.resizeIcon);
-	},
-
-	_getResizeMarkerPoint: function (latlng) {
-		// From L.shape.getBounds()
-		var delta = this._shape._radius * Math.cos(Math.PI / 4);
-			point = map.project(latlng);
-		return map.unproject([point.x + delta, point.y - delta]);
 	},
 
 	_move: function (latlng) {

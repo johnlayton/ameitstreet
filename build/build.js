@@ -1,6 +1,6 @@
-var fs = require('fs'),
-	uglifyjs = require('uglify-js'),
-	deps = require('./deps.js').deps;
+var fs       = require('fs'),
+	  uglifyjs = require('uglify-js'),
+	  deps     = require('./deps.js').deps;
 
 exports.getFiles = function () {
 	var memo = {};
@@ -24,16 +24,22 @@ exports.getFiles = function () {
 	return files;
 };
 
+exports.minify = function( files ) {
+  return uglifyjs.minify( files );
+};
+
+/*
 exports.uglify = function (code) {
 	var pro = uglifyjs.uglify;
 
-	var ast = uglifyjs.parser.parse(code);
+	var ast = uglifyjs.parse(code);
 	ast = pro.ast_mangle(ast, {mangle: true});
 	ast = pro.ast_squeeze(ast);
 	ast = pro.ast_squeeze_more(ast);
 
 	return pro.gen_code(ast) + ';';
 };
+*/
 
 exports.combineFiles = function (files) {
 	var content = '(function (window, undefined) {\n\n' +
