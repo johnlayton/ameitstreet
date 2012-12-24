@@ -45,22 +45,28 @@
 
 		var drawControl = new L.Control.Draw({
 			position: 'topleft',
-			polygon: {
-				title: 'Draw a sexy polygon!',
-				allowIntersection: false,
-				drawError: {
-					color: '#b00b00',
-					timeout: 1000
-				},
-				shapeOptions: {
-					color: '#bada55'
-				}
-			},
-			circle: {
-				shapeOptions: {
-					color: '#662d91'
-				}
-			}
+            shapes: [
+                {
+                    name: 'polygon',
+                    type: 'polygon',
+                    title: 'Draw a sexy polygon!',
+                    allowIntersection: false,
+                    drawError: {
+                        color: '#b00b00',
+                        timeout: 1000
+                    },
+                    shapeOptions: {
+                        color: '#bada55'
+                    }
+                },
+                {
+                    name: 'circle',
+                    type: 'circle',
+                    shapeOptions: {
+                        color: '#662d91'
+                    }
+                }
+            ]
 		});
 		map.addControl(drawControl);
 		
