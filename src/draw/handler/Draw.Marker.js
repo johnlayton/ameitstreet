@@ -44,8 +44,9 @@ L.Draw.Marker = L.Draw.Feature.extend({
 			this._map.off('mousemove', this._onMouseMove);
       if (L.Browser.touch) {
         L.DomEvent
-          .removeListener(this._container, 'touchmove', this._onMouseMove)
-          .removeListener(this._container, 'touchend', this._onClick);
+          .removeListener(this._container, 'touchend', this._onClick)
+          .removeListener(this._container, 'touchstart', this._onMouseMove)
+          .removeListener(this._container, 'touchmove', this._onMouseMove);
       }
 		}
   },
@@ -80,15 +81,6 @@ L.Draw.Marker = L.Draw.Feature.extend({
 	},
 
 	_onClick: function (e) {
-
-/*
-    var latlng = e.latlng;
-
-    if ( !latlng ) {
-      latlng = this._map.mouseEventToLatLng( e.changedTouches[0] )
-    }
-*/
-
 		this._map.fire(
 			'draw:marker-created',
 			{ marker: new L.Marker(this._marker.getLatLng(), { icon: this.options.icon }) }
