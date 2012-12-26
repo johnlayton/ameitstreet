@@ -25,7 +25,7 @@ L.Control.Edit = L.Control.Toolbar.extend({
 		var container = L.DomUtil.create('div', ''),
 			buttonIndex = 0;
 
-		this._toolbarContainer = L.DomUtil.create('div', 'leaflet-control-toolbar'),
+		this._toolbarContainer = L.DomUtil.create('div', 'leaflet-control-toolbar');
 
 		this._map = map;
 

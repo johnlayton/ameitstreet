@@ -54,8 +54,8 @@ L.Draw.Marker = L.Draw.Feature.extend({
 	_onMouseMove: function (e) {
 		var latlng = e.latlng;
 
-    if ( !latlng ) {
-      latlng = this._map.mouseEventToLatLng( e.changedTouches[0] )
+    if (!latlng && e.changedTouches) {
+      latlng = this._map.mouseEventToLatLng(e.changedTouches[0]);
     }
 
 		this._tooltip.updatePosition(latlng);

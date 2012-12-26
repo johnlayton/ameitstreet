@@ -14,7 +14,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 			timeout: 2500
 		},
 		icon: new L.DivIcon({
-			iconSize: new L.Point(8, 8),
+      iconSize: L.Browser.touch ? new L.Point(20, 20) : new L.Point(10, 10),
 			className: 'leaflet-div-icon leaflet-editing-icon'
 		}),
 		guidelineDistance: 20,
@@ -77,7 +77,15 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 			this._map
 				.on('mousemove', this._onMouseMove, this)
 				.on('zoomend', this._onZoomEnd, this);
-		}
+
+      if (L.Browser.touch) {
+        L.DomEvent
+          .addListener(this._container, 'touchstart', this._onMouseMove, this)
+          .addListener(this._container, 'touchmove', this._onMouseMove, this)
+          .addListener(this._container, 'touchend', this._onClick, this);
+      }
+
+    }
 	},
 
 	removeHooks: function () {
@@ -105,6 +113,14 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		this._map
 			.off('mousemove', this._onMouseMove)
 			.off('zoomend', this._onZoomEnd);
+
+    if (L.Browser.touch) {
+      L.DomEvent
+        .removeListener(this._container, 'touchstart', this._onMouseMove)
+        .removeListener(this._container, 'touchmove', this._onMouseMove)
+        .removeListener(this._container, 'touchend', this._onClick);
+    }
+
 	},
 
 	_finishShape: function () {
@@ -137,6 +153,10 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 			latlng = e.latlng,
 			markerCount = this._markers.length;
 
+    if (!latlng) {
+      latlng = this._map.mouseEventToLatLng(e.changedTouches[0]);
+    }
+
 		// Save latlng
 		// should this be moved to _updateGuide() ?
 		this._currentLatLng = latlng;
@@ -154,8 +174,18 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 	},
 
 	_onClick: function (e) {
-		var latlng = e.target.getLatLng(),
-			markerCount = this._markers.length;
+    var latlng = e.latlng;
+
+    if (!latlng) {
+      if (e.changedTouches) {
+        latlng = this._map.mouseEventToLatLng(e.changedTouches[0]);
+      }
+      else {
+        latlng = e.target.getLatLng();
+      }
+    }
+
+		var markerCount = this._markers.length;
 
 		if (markerCount > 0 && !this.options.allowIntersection && this._poly.newLatLngIntersects(latlng)) {
 			this._showErrorTooltip();
@@ -184,11 +214,17 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		// The last marker shold have a click handler to close the polyline
 		if (this._markers.length > 1) {
 			this._markers[this._markers.length - 1].on('click', this._finishShape, this);
+      if (L.Browser.touch) {
+        this._markers[this._markers.length - 2].on('touchend', this._finishShape);
+      }
 		}
 		
 		// Remove the old marker click handler (as only the last point should close the polyline)
 		if (this._markers.length > 2) {
 			this._markers[this._markers.length - 2].off('click', this._finishShape);
+      if (L.Browser.touch) {
+        this._markers[this._markers.length - 2].off('touchend', this._finishShape);
+      }
 		}
 	},
 	

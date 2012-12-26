@@ -138,6 +138,7 @@ L.Polygon.include({
 });
 
 L.Tooltip = L.Class.extend({
+
 	initialize: function (map) {
 		this._map = map;
 		this._popupPane = map._panes.popupPane;
@@ -366,8 +367,6 @@ L.Control.Draw = L.Control.Toolbar.extend({
 
     this.handlers = {};
 
-
-
     for (var i = 0; i < this.options.shapes.length; i++) {
       var options = this.options.shapes[i];
 
@@ -447,7 +446,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 			timeout: 2500
 		},
 		icon: new L.DivIcon({
-			iconSize: new L.Point(8, 8),
+      iconSize: L.Browser.touch ? new L.Point(20, 20) : new L.Point(10, 10),
 			className: 'leaflet-div-icon leaflet-editing-icon'
 		}),
 		guidelineDistance: 20,
@@ -510,7 +509,15 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 			this._map
 				.on('mousemove', this._onMouseMove, this)
 				.on('zoomend', this._onZoomEnd, this);
-		}
+
+      if (L.Browser.touch) {
+        L.DomEvent
+          .addListener(this._container, 'touchstart', this._onMouseMove, this)
+          .addListener(this._container, 'touchmove', this._onMouseMove, this)
+          .addListener(this._container, 'touchend', this._onClick, this);
+      }
+
+    }
 	},
 
 	removeHooks: function () {
@@ -538,6 +545,14 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		this._map
 			.off('mousemove', this._onMouseMove)
 			.off('zoomend', this._onZoomEnd);
+
+    if (L.Browser.touch) {
+      L.DomEvent
+        .removeListener(this._container, 'touchstart', this._onMouseMove)
+        .removeListener(this._container, 'touchmove', this._onMouseMove)
+        .removeListener(this._container, 'touchend', this._onClick);
+    }
+
 	},
 
 	_finishShape: function () {
@@ -570,6 +585,10 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 			latlng = e.latlng,
 			markerCount = this._markers.length;
 
+    if (!latlng) {
+      latlng = this._map.mouseEventToLatLng(e.changedTouches[0]);
+    }
+
 		// Save latlng
 		// should this be moved to _updateGuide() ?
 		this._currentLatLng = latlng;
@@ -587,8 +606,18 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 	},
 
 	_onClick: function (e) {
-		var latlng = e.target.getLatLng(),
-			markerCount = this._markers.length;
+    var latlng = e.latlng;
+
+    if (!latlng) {
+      if (e.changedTouches) {
+        latlng = this._map.mouseEventToLatLng(e.changedTouches[0]);
+      }
+      else {
+        latlng = e.target.getLatLng();
+      }
+    }
+
+		var markerCount = this._markers.length;
 
 		if (markerCount > 0 && !this.options.allowIntersection && this._poly.newLatLngIntersects(latlng)) {
 			this._showErrorTooltip();
@@ -617,11 +646,17 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		// The last marker shold have a click handler to close the polyline
 		if (this._markers.length > 1) {
 			this._markers[this._markers.length - 1].on('click', this._finishShape, this);
+      if (L.Browser.touch) {
+        this._markers[this._markers.length - 2].on('touchend', this._finishShape);
+      }
 		}
 		
 		// Remove the old marker click handler (as only the last point should close the polyline)
 		if (this._markers.length > 2) {
 			this._markers[this._markers.length - 2].off('click', this._finishShape);
+      if (L.Browser.touch) {
+        this._markers[this._markers.length - 2].off('touchend', this._finishShape);
+      }
 		}
 	},
 	
@@ -870,6 +905,13 @@ L.Draw.SimpleShape = L.Draw.Feature.extend({
 			this._map
 				.on('mousedown', this._onMouseDown, this)
 				.on('mousemove', this._onMouseMove, this);
+
+      if (L.Browser.touch) {
+        L.DomEvent
+          .addListener(this._container, 'touchstart', this._onMouseDown, this)
+          .addListener(document, 'touchmove', this._onMouseMove, this);
+      }
+
 		}
 	},
 
@@ -886,6 +928,13 @@ L.Draw.SimpleShape = L.Draw.Feature.extend({
 
 			L.DomEvent.off(document, 'mouseup', this._onMouseUp);
 
+      if (L.Browser.touch) {
+        L.DomEvent
+          .removeListener(this._container, 'touchstart', this._onMouseDown)
+          .removeListener(document, 'touchmove', this._onMouseMove)
+          .removeListener(document, 'touchend', this._onMouseUp);
+      }
+
 			// If the box element doesn't exist they must not have moved the mouse, so don't need to destroy/return
 			if (this._shape) {
 				this._map.removeLayer(this._shape);
@@ -895,17 +944,37 @@ L.Draw.SimpleShape = L.Draw.Feature.extend({
 		this._isDrawing = false;
 	},
 
-	_onMouseDown: function (e) {
-		this._isDrawing = true;
-		this._startLatLng = e.latlng;
+  _onMouseDown: function (e) {
+    this._isDrawing = true;
 
-		L.DomEvent
-			.on(document, 'mouseup', this._onMouseUp, this)
-			.preventDefault(e.originalEvent);
-	},
+    this._tooltip.updateContent({ text: 'Release mouse to finish drawing.' });
+
+    this._startLatLng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+
+    if (e.touches) {
+      L.DomEvent.stopPropagation(e);
+    }
+
+    L.DomEvent
+      .addListener(document, 'mouseup', this._onMouseUp, this)
+      .preventDefault(e);
+
+    if (L.Browser.touch) {
+      L.DomEvent
+        .addListener(document, 'touchend', this._onMouseUp, this);
+    }
+  },
 
 	_onMouseMove: function (e) {
 		var latlng = e.latlng;
+
+    if (!latlng) {
+      latlng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+    }
+
+    if (e.touches) {
+      L.DomEvent.stopPropagation(e);
+    }
 
 		this._tooltip.updatePosition(latlng);
 		if (this._isDrawing) {
@@ -915,7 +984,12 @@ L.Draw.SimpleShape = L.Draw.Feature.extend({
 	},
 
 	_onMouseUp: function (e) {
-		if (this._shape) {
+    this._endLatLng = this._map.mouseEventToLatLng(e.changedTouches ? e.changedTouches[0] : e);
+    if (e.touches) {
+      L.DomEvent.stopPropagation(e);
+    }
+
+    if (this._shape) {
 			this._fireCreatedEvent();
 		}
 		
@@ -1032,86 +1106,75 @@ L.Draw.Marker = L.Draw.Feature.extend({
 	},
 	
 	addHooks: function () {
-    L.Draw.Feature.prototype.addHooks.call(this);
-    //this._marker = null;
-    if (this._map) {
-      this._tooltip.updateContent({
-        text: (L.Browser.touch ? 'Tap' : 'Click') + ' map to place marker.'
-      });
-      L.DomEvent.addListener(this._container, 'mousemove', this._onMouseMove, this);
+		L.Draw.Feature.prototype.addHooks.call(this);
+		
+		if (this._map) {
+			this._tooltip.updateContent({ text: 'Click map to place marker.' });
+			this._map.on('mousemove', this._onMouseMove, this);
       if (L.Browser.touch) {
+        L.DomEvent.addListener(this._container, 'touchstart', this._onMouseMove, this);
         L.DomEvent.addListener(this._container, 'touchmove', this._onMouseMove, this);
-        L.DomEvent.addListener(this._container, 'touchend', this._onClick, this);
       }
-    }
+		}
 	},
 
 	removeHooks: function () {
-    L.Draw.Feature.prototype.removeHooks.call(this);
-    if (this._map) {
-      if (this._marker) {
-        L.DomEvent
-          .removeListener(this._marker, 'click', this._onClick)
-          .removeListener(this._map, 'click', this._onClick);
+		L.Draw.Feature.prototype.removeHooks.call(this);
+		
+		if (this._map) {
+			if (this._marker) {
+				this._marker.off('click', this._onClick);
+				this._map
+					.off('click', this._onClick)
+					.removeLayer(this._marker);
+				delete this._marker;
+			}
 
-        if (L.Browser.touch) {
-          L.DomEvent
-            .removeListener(this._marker, 'touchend', this._onClick);
-        }
-        this._map.removeLayer(this._marker);
-        delete this._marker;
-      }
-
-      L.DomEvent.removeListener(this._container, 'mousemove', this._onMouseMove);
+			this._map.off('mousemove', this._onMouseMove);
       if (L.Browser.touch) {
         L.DomEvent
-          .removeListener(this._container, 'touchmove', this._onMouseMove)
-          .removeListener(this._container, 'touchend', this._onClick);
+          .removeListener(this._container, 'touchend', this._onClick)
+          .removeListener(this._container, 'touchstart', this._onMouseMove)
+          .removeListener(this._container, 'touchmove', this._onMouseMove);
       }
-    }
+		}
   },
 
 	_onMouseMove: function (e) {
-    var newPos = this._map.mouseEventToLayerPoint(e.touches ? e.touches[0] : e),
-      latlng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+		var latlng = e.latlng;
 
-    if (e.touches) {
-      // This is necessary to stop the map from panning
-      L.DomEvent.stopPropagation(e);
+    if (!latlng && e.changedTouches) {
+      latlng = this._map.mouseEventToLatLng(e.changedTouches[0]);
     }
 
-    this._tooltip.updatePosition(newPos);
+		this._tooltip.updatePosition(latlng);
 
-    if (!this._marker) {
-      this._marker = new L.Marker(latlng, this.options.icon);
-      this._map.addLayer(this._marker);
-      // Bind to both marker and map to make sure we get the click event.
-      L.DomEvent
-        .addListener(this._marker, 'click', this._onClick, this)
-        .addListener(this._map, 'click', this._onClick, this);
-
+		if (!this._marker) {
+			this._marker = new L.Marker(latlng, {
+				icon: this.options.icon,
+				zIndexOffset: this.options.zIndexOffset
+			});
+			// Bind to both marker and map to make sure we get the click event.
+			this._marker.on('click', this._onClick, this);
+			this._map
+				.on('click', this._onClick, this)
+				.addLayer(this._marker);
       if (L.Browser.touch) {
         L.DomEvent
-          .addListener(this._marker, 'touchend', this._onClick, this);
+          .addListener(this._container, 'touchend', this._onClick, this);
       }
-    }
-    else {
-      this._marker.setLatLng(latlng);
-    }
-  },
+		}
+		else {
+			this._marker.setLatLng(latlng);
+		}
+	},
 
 	_onClick: function (e) {
-    if (e.touches) {
-      // This might be a bit greedy
-      L.DomEvent.stopPropagation(e);
-    }
-    this._map.fire(
-      'draw:marker-created',
-      {
-        marker: new L.Marker(this._marker ? this._marker.getLatLng() : this._map.mouseEventToLatLng(e.changedTouches ? e.changedTouches[0] : e), this.options.icon)
-      }
-    );
-    this.disable();
+		this._map.fire(
+			'draw:marker-created',
+			{ marker: new L.Marker(this._marker.getLatLng(), { icon: this.options.icon }) }
+		);
+		this.disable();
 	}
 });
 
@@ -1142,7 +1205,7 @@ L.Control.Edit = L.Control.Toolbar.extend({
 		var container = L.DomUtil.create('div', ''),
 			buttonIndex = 0;
 
-		this._toolbarContainer = L.DomUtil.create('div', 'leaflet-control-toolbar'),
+		this._toolbarContainer = L.DomUtil.create('div', 'leaflet-control-toolbar');
 
 		this._map = map;
 
@@ -1709,12 +1772,14 @@ L.Rectangle.addInitHook(function () {
 L.Edit.SimpleShape = L.Handler.extend({
 	options: {
 		moveIcon: new L.DivIcon({
-			iconSize: new L.Point(8, 8),
+			iconSize: new L.Point(30, 30),
+//      iconSize: L.Browser.touch ? new L.Point(20, 20) : new L.Point(10, 10),
 			className: 'leaflet-div-icon leaflet-editing-icon leaflet-edit-move'
 		}),
 		resizeIcon: new L.DivIcon({
-			iconSize: new L.Point(8, 8),
-			className: 'leaflet-div-icon leaflet-editing-icon leaflet-edit-resize'
+			iconSize: new L.Point(30, 30),
+//      iconSize: L.Browser.touch ? new L.Point(20, 20) : new L.Point(10, 10),
+      className: 'leaflet-div-icon leaflet-editing-icon leaflet-edit-resize'
 		})
 	},
 
