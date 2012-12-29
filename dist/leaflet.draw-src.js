@@ -430,6 +430,178 @@ L.Map.addInitHook(function () {
 });
 
 
+L.Draw = {};
+
+L.Draw.Feature = L.Handler.extend({
+	includes: L.Mixin.Events,
+
+	initialize: function (map, options) {
+		this._map = map;
+		this._container = map._container;
+		this._overlayPane = map._panes.overlayPane;
+		this._popupPane = map._panes.popupPane;
+
+		// Merge default shapeOptions options with custom shapeOptions
+		if (options && options.shapeOptions) {
+			options.shapeOptions = L.Util.extend({}, this.options.shapeOptions, options.shapeOptions);
+		}
+		L.Util.extend(this.options, options);
+	},
+
+	enable: function () {
+		this.fire('enabled', { handler: this.type });
+		this._map.fire('draw:enabled', { drawingType: this.type });
+		L.Handler.prototype.enable.call(this);
+	},
+
+	disable: function () {
+		this.fire('disabled', { handler: this.type });
+		this._map.fire('draw:disabled', { drawingType: this.type });
+		L.Handler.prototype.disable.call(this);
+	},
+	
+	addHooks: function () {
+		if (this._map) {
+			L.DomUtil.disableTextSelection();
+
+			this._tooltip = new L.Tooltip(this._map);
+
+			L.DomEvent.addListener(this._container, 'keyup', this._cancelDrawing, this);
+		}
+	},
+
+	removeHooks: function () {
+		if (this._map) {
+			L.DomUtil.enableTextSelection();
+
+			this._tooltip.dispose();
+			this._tooltip = null;
+
+			L.DomEvent.removeListener(this._container, 'keyup', this._cancelDrawing);
+		}
+	},
+
+	// Cancel drawing when the escape key is pressed
+	_cancelDrawing: function (e) {
+		if (e.keyCode === 27) {
+			this.disable();
+		}
+	}
+});
+
+L.SimpleShape = {};
+
+L.Draw.SimpleShape = L.Draw.Feature.extend({
+	addHooks: function () {
+		L.Draw.Feature.prototype.addHooks.call(this);
+		if (this._map) {
+			this._map.dragging.disable();
+			//TODO refactor: move cursor to styles
+			this._container.style.cursor = 'crosshair';
+
+			this._tooltip.updateContent({ text: this._initialLabelText });
+
+			this._map
+				.on('mousedown', this._onMouseDown, this)
+				.on('mousemove', this._onMouseMove, this);
+
+      if (L.Browser.touch) {
+        L.DomEvent
+          .addListener(this._container, 'touchstart', this._onMouseDown, this)
+          .addListener(document, 'touchmove', this._onMouseMove, this);
+      }
+
+		}
+	},
+
+	removeHooks: function () {
+		L.Draw.Feature.prototype.removeHooks.call(this);
+		if (this._map) {
+			this._map.dragging.enable();
+			//TODO refactor: move cursor to styles
+			this._container.style.cursor = '';
+
+			this._map
+				.off('mousedown', this._onMouseDown, this)
+				.off('mousemove', this._onMouseMove, this);
+
+			L.DomEvent.off(document, 'mouseup', this._onMouseUp);
+
+      if (L.Browser.touch) {
+        L.DomEvent
+          .removeListener(this._container, 'touchstart', this._onMouseDown)
+          .removeListener(document, 'touchmove', this._onMouseMove)
+          .removeListener(document, 'touchend', this._onMouseUp);
+      }
+
+			// If the box element doesn't exist they must not have moved the mouse, so don't need to destroy/return
+			if (this._shape) {
+				this._map.removeLayer(this._shape);
+				delete this._shape;
+			}
+		}
+		this._isDrawing = false;
+	},
+
+  _onMouseDown: function (e) {
+    this._isDrawing = true;
+
+    this._tooltip.updateContent({ text: 'Release mouse to finish drawing.' });
+
+    var latlng = e.latlng;
+
+    if (!latlng) {
+      latlng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+    }
+
+    this._startLatLng = latlng; //this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+
+    if (e.touches) {
+      L.DomEvent.stopPropagation(e);
+    }
+
+    L.DomEvent
+      .addListener(document, 'mouseup', this._onMouseUp, this)
+      .preventDefault(e);
+
+    if (L.Browser.touch) {
+      L.DomEvent
+        .addListener(document, 'touchend', this._onMouseUp, this);
+    }
+  },
+
+	_onMouseMove: function (e) {
+		var latlng = e.latlng;
+
+    if (!latlng) {
+      latlng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+    }
+
+    if (e.touches) {
+      L.DomEvent.stopPropagation(e);
+    }
+
+		this._tooltip.updatePosition(latlng);
+		if (this._isDrawing) {
+			this._tooltip.updateContent({ text: 'Release mouse to finish drawing.' });
+			this._drawShape(latlng);
+		}
+	},
+
+	_onMouseUp: function (e) {
+    this._endLatLng = this._map.mouseEventToLatLng(e.changedTouches ? e.changedTouches[0] : e);
+    if (e.touches) {
+      L.DomEvent.stopPropagation(e);
+    }
+
+    if (this._shape) {
+			this._fireCreatedEvent();
+		}
+		
+		this.disable();
+	}
+});
+
 L.Draw.Polyline = L.Draw.Feature.extend({
 	statics: {
 		TYPE: 'polyline'
@@ -890,113 +1062,6 @@ L.Draw.Polygon = L.Draw.Polyline.extend({
 	}
 });
 
-L.SimpleShape = {};
-
-L.Draw.SimpleShape = L.Draw.Feature.extend({
-	addHooks: function () {
-		L.Draw.Feature.prototype.addHooks.call(this);
-		if (this._map) {
-			this._map.dragging.disable();
-			//TODO refactor: move cursor to styles
-			this._container.style.cursor = 'crosshair';
-
-			this._tooltip.updateContent({ text: this._initialLabelText });
-
-			this._map
-				.on('mousedown', this._onMouseDown, this)
-				.on('mousemove', this._onMouseMove, this);
-
-      if (L.Browser.touch) {
-        L.DomEvent
-          .addListener(this._container, 'touchstart', this._onMouseDown, this)
-          .addListener(document, 'touchmove', this._onMouseMove, this);
-      }
-
-		}
-	},
-
-	removeHooks: function () {
-		L.Draw.Feature.prototype.removeHooks.call(this);
-		if (this._map) {
-			this._map.dragging.enable();
-			//TODO refactor: move cursor to styles
-			this._container.style.cursor = '';
-
-			this._map
-				.off('mousedown', this._onMouseDown, this)
-				.off('mousemove', this._onMouseMove, this);
-
-			L.DomEvent.off(document, 'mouseup', this._onMouseUp);
-
-      if (L.Browser.touch) {
-        L.DomEvent
-          .removeListener(this._container, 'touchstart', this._onMouseDown)
-          .removeListener(document, 'touchmove', this._onMouseMove)
-          .removeListener(document, 'touchend', this._onMouseUp);
-      }
-
-			// If the box element doesn't exist they must not have moved the mouse, so don't need to destroy/return
-			if (this._shape) {
-				this._map.removeLayer(this._shape);
-				delete this._shape;
-			}
-		}
-		this._isDrawing = false;
-	},
-
-  _onMouseDown: function (e) {
-    this._isDrawing = true;
-
-    this._tooltip.updateContent({ text: 'Release mouse to finish drawing.' });
-
-    this._startLatLng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
-
-    if (e.touches) {
-      L.DomEvent.stopPropagation(e);
-    }
-
-    L.DomEvent
-      .addListener(document, 'mouseup', this._onMouseUp, this)
-      .preventDefault(e);
-
-    if (L.Browser.touch) {
-      L.DomEvent
-        .addListener(document, 'touchend', this._onMouseUp, this);
-    }
-  },
-
-	_onMouseMove: function (e) {
-		var latlng = e.latlng;
-
-    if (!latlng) {
-      latlng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
-    }
-
-    if (e.touches) {
-      L.DomEvent.stopPropagation(e);
-    }
-
-		this._tooltip.updatePosition(latlng);
-		if (this._isDrawing) {
-			this._tooltip.updateContent({ text: 'Release mouse to finish drawing.' });
-			this._drawShape(latlng);
-		}
-	},
-
-	_onMouseUp: function (e) {
-    this._endLatLng = this._map.mouseEventToLatLng(e.changedTouches ? e.changedTouches[0] : e);
-    if (e.touches) {
-      L.DomEvent.stopPropagation(e);
-    }
-
-    if (this._shape) {
-			this._fireCreatedEvent();
-		}
-		
-		this.disable();
-	}
-});
-
 L.Draw.Circle = L.Draw.SimpleShape.extend({
 	statics: {
 		TYPE: 'circle'
@@ -1387,68 +1452,6 @@ L.Delete.Feature = L.Handler.extend({
 });
 
 
-L.Edit.Circle = L.Edit.SimpleShape.extend({
-
-	_createMoveMarker: function () {
-		var center = this._shape.getLatLng();
-
-		this._moveMarker = this._createMarker(center, this.options.moveIcon);
-	},
-
-  _getResizeMarkerPoint: function (latlng) {
-    // From L.shape.getBounds()
-    var delta = this._shape._radius * Math.cos(Math.PI / 4),
-        point = this._shape._map.project(latlng);
-    return this._shape._map.unproject([point.x + delta, point.y - delta]);
-  },
-
-  _createResizeMarker: function () {
-		var center = this._shape.getLatLng(),
-			resizemarkerPoint = this._getResizeMarkerPoint(center);
-
-		this._resizeMarker = this._createMarker(resizemarkerPoint, this.options.resizeIcon);
-	},
-
-	_move: function (latlng) {
-		var resizemarkerPoint = this._getResizeMarkerPoint(latlng);
-
-		// Move the resize marker
-		this._resizeMarker.setLatLng(resizemarkerPoint);
-
-		// Move the circle
-		this._shape.setLatLng(latlng);
-	},
-
-	_resize: function (latlng) {
-		var moveLatLng = this._moveMarker.getLatLng(),
-			radius = moveLatLng.distanceTo(latlng);
-
-		this._shape.setRadius(radius);
-	}
-});
-
-L.Circle.addInitHook(function () {
-	if (L.Edit.Circle) {
-		this.editing = new L.Edit.Circle(this);
-
-		if (this.options.editable) {
-			this.editing.enable();
-		}
-	}
-
-	this.on('add', function () {
-		if (this.editing && this.editing.enabled()) {
-			this.editing.addHooks();
-		}
-	});
-
-	this.on('remove', function () {
-		if (this.editing && this.editing.enabled()) {
-			this.editing.removeHooks();
-		}
-	});
-});
-
 L.Edit = L.Edit || {};
 
 L.Edit.Feature = L.Handler.extend({
@@ -1687,86 +1690,6 @@ L.Edit.Feature = L.Handler.extend({
 	// TODO: move!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 });
 
-L.Edit.Rectangle = L.Edit.SimpleShape.extend({
-	_createMoveMarker: function () {
-		var bounds = this._shape.getBounds(),
-			center = bounds.getCenter();
-
-		this._moveMarker = this._createMarker(center, this.options.moveIcon);
-	},
-
-	_createResizeMarker: function () {
-		var bounds = this._shape.getBounds(),
-			  point = bounds.getNorthEast();
-
-		this._resizeMarker = this._createMarker(point, this.options.resizeIcon);
-	},
-
-	_onMarkerDragEnd: function (e) {
-		var marker = e.target,
-			bounds, center;
-
-		// Reset marker position to the center
-		if (marker === this._moveMarker) {
-			bounds = this._shape.getBounds();
-			center = bounds.getCenter();
-
-			marker.setLatLng(center);
-		}
-		
-
-		L.Edit.SimpleShape.prototype._onMarkerDragEnd.call(this, e);
-	},
-
-	_move: function (newCenter) {
-		var latlngs = this._shape.getLatLngs(),
-			bounds = this._shape.getBounds(),
-			center = bounds.getCenter(),
-			offset, newLatLngs = [];
-
-		// Offset the latlngs to the new center
-		for (var i = 0, l = latlngs.length; i < l; i++) {
-			offset = [latlngs[i].lat - center.lat, latlngs[i].lng - center.lng];
-			newLatLngs.push([newCenter.lat + offset[0], newCenter.lng + offset[1]]);
-		}
-
-		this._shape.setLatLngs(newLatLngs);
-
-		// Respoition the resize marker
-		bounds = this._shape.getBounds();
-		this._resizeMarker.setLatLng(bounds.getNorthEast());
-	},
-
-	_resize: function (latlng) {
-		var bounds = this._shape.getBounds(),
-			nw = bounds.getNorthWest(),
-			ne = bounds.getNorthEast(),
-			se = bounds.getSouthEast(),
-			sw = bounds.getSouthWest();
-
-		nw.lat = latlng.lat < sw.lat ? sw.lat : latlng.lat;
-		ne.lat = latlng.lat < sw.lat ? sw.lat : latlng.lat;
-		ne.lng = latlng.lng < sw.lng ? sw.lng : latlng.lng;
-		se.lng = latlng.lng < sw.lng ? sw.lng : latlng.lng;
-
-		this._shape.setLatLngs([nw, ne, se, sw]);
-
-		// Respoition the move marker
-		bounds = this._shape.getBounds();
-		this._moveMarker.setLatLng(bounds.getCenter());
-	}
-});
-
-L.Rectangle.addInitHook(function () {
-	if (L.Edit.Rectangle) {
-		this.editing = new L.Edit.Rectangle(this);
-
-		if (this.options.editable) {
-			this.editing.enable();
-		}
-	}
-});
-
 // Adapted from https://github.com/shramov/Leaflet/tree/circle-edit
 
 L.Edit.SimpleShape = L.Handler.extend({
@@ -1894,6 +1817,148 @@ L.Edit.SimpleShape = L.Handler.extend({
 
 	_resize: function (latlng) {
 		// Children override
+	}
+});
+
+L.Edit.Circle = L.Edit.SimpleShape.extend({
+
+	_createMoveMarker: function () {
+		var center = this._shape.getLatLng();
+
+		this._moveMarker = this._createMarker(center, this.options.moveIcon);
+	},
+
+  _getResizeMarkerPoint: function (latlng) {
+    // From L.shape.getBounds()
+    var delta = this._shape._radius * Math.cos(Math.PI / 4),
+        point = this._shape._map.project(latlng);
+    return this._shape._map.unproject([point.x + delta, point.y - delta]);
+  },
+
+  _createResizeMarker: function () {
+		var center = this._shape.getLatLng(),
+			resizemarkerPoint = this._getResizeMarkerPoint(center);
+
+		this._resizeMarker = this._createMarker(resizemarkerPoint, this.options.resizeIcon);
+	},
+
+	_move: function (latlng) {
+		var resizemarkerPoint = this._getResizeMarkerPoint(latlng);
+
+		// Move the resize marker
+		this._resizeMarker.setLatLng(resizemarkerPoint);
+
+		// Move the circle
+		this._shape.setLatLng(latlng);
+	},
+
+	_resize: function (latlng) {
+		var moveLatLng = this._moveMarker.getLatLng(),
+			radius = moveLatLng.distanceTo(latlng);
+
+		this._shape.setRadius(radius);
+	}
+});
+
+L.Circle.addInitHook(function () {
+	if (L.Edit.Circle) {
+		this.editing = new L.Edit.Circle(this);
+
+		if (this.options.editable) {
+			this.editing.enable();
+		}
+	}
+
+	this.on('add', function () {
+		if (this.editing && this.editing.enabled()) {
+			this.editing.addHooks();
+		}
+	});
+
+	this.on('remove', function () {
+		if (this.editing && this.editing.enabled()) {
+			this.editing.removeHooks();
+		}
+	});
+});
+
+L.Edit.Rectangle = L.Edit.SimpleShape.extend({
+	_createMoveMarker: function () {
+		var bounds = this._shape.getBounds(),
+			center = bounds.getCenter();
+
+		this._moveMarker = this._createMarker(center, this.options.moveIcon);
+	},
+
+	_createResizeMarker: function () {
+		var bounds = this._shape.getBounds(),
+			  point = bounds.getNorthEast();
+
+		this._resizeMarker = this._createMarker(point, this.options.resizeIcon);
+	},
+
+	_onMarkerDragEnd: function (e) {
+		var marker = e.target,
+			bounds, center;
+
+		// Reset marker position to the center
+		if (marker === this._moveMarker) {
+			bounds = this._shape.getBounds();
+			center = bounds.getCenter();
+
+			marker.setLatLng(center);
+		}
+		
+
+		L.Edit.SimpleShape.prototype._onMarkerDragEnd.call(this, e);
+	},
+
+	_move: function (newCenter) {
+		var latlngs = this._shape.getLatLngs(),
+			bounds = this._shape.getBounds(),
+			center = bounds.getCenter(),
+			offset, newLatLngs = [];
+
+		// Offset the latlngs to the new center
+		for (var i = 0, l = latlngs.length; i < l; i++) {
+			offset = [latlngs[i].lat - center.lat, latlngs[i].lng - center.lng];
+			newLatLngs.push([newCenter.lat + offset[0], newCenter.lng + offset[1]]);
+		}
+
+		this._shape.setLatLngs(newLatLngs);
+
+		// Respoition the resize marker
+		bounds = this._shape.getBounds();
+		this._resizeMarker.setLatLng(bounds.getNorthEast());
+	},
+
+	_resize: function (latlng) {
+		var bounds = this._shape.getBounds(),
+			nw = bounds.getNorthWest(),
+			ne = bounds.getNorthEast(),
+			se = bounds.getSouthEast(),
+			sw = bounds.getSouthWest();
+
+		nw.lat = latlng.lat < sw.lat ? sw.lat : latlng.lat;
+		ne.lat = latlng.lat < sw.lat ? sw.lat : latlng.lat;
+		ne.lng = latlng.lng < sw.lng ? sw.lng : latlng.lng;
+		se.lng = latlng.lng < sw.lng ? sw.lng : latlng.lng;
+
+		this._shape.setLatLngs([nw, ne, se, sw]);
+
+		// Respoition the move marker
+		bounds = this._shape.getBounds();
+		this._moveMarker.setLatLng(bounds.getCenter());
+	}
+});
+
+L.Rectangle.addInitHook(function () {
+	if (L.Edit.Rectangle) {
+		this.editing = new L.Edit.Rectangle(this);
+
+		if (this.options.editable) {
+			this.editing.enable();
+		}
 	}
 });
 

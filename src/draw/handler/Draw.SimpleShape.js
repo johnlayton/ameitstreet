@@ -57,7 +57,13 @@ L.Draw.SimpleShape = L.Draw.Feature.extend({
 
     this._tooltip.updateContent({ text: 'Release mouse to finish drawing.' });
 
-    this._startLatLng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+    var latlng = e.latlng;
+
+    if (!latlng) {
+      latlng = this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
+    }
+
+    this._startLatLng = latlng; //this._map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
 
     if (e.touches) {
       L.DomEvent.stopPropagation(e);
