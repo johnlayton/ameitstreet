@@ -10,26 +10,31 @@ L.Control.Draw = L.Control.Toolbar.extend({
       {
         name: 'polyline',
         type: 'polyline',
+        style: 'polyline',
         title: 'Draw a polyline'
       },
       {
         name: 'polygon',
         type: 'polygon',
+        style: 'polygon',
         title: 'Draw a polygon'
       },
       {
         name: 'rectangle',
         type: 'rectangle',
+        style: 'rectangle',
         title: 'Draw a rectangle'
       },
       {
         name: 'circle',
         type: 'circle',
+        style: 'circle',
         title: 'Draw a circle'
       },
       {
         name: 'marker',
         type: 'marker',
+        style: 'marker',
         title: 'Add a marker'
       }
     ]
