@@ -210,7 +210,7 @@ L.Control.Toolbar = L.Control.extend({
 
 		this._modes[type].button = this._createButton({
 			title: handler.options.title,
-			className: classNamePredix + '-' + type,
+			className: classNamePredix + '-' + (handler.options.style ? handler.options.style : type),
 			container: container,
 			callback: this._modes[type].handler.enable,
 			context: this._modes[type].handler
@@ -333,26 +333,31 @@ L.Control.Draw = L.Control.Toolbar.extend({
       {
         name: 'polyline',
         type: 'polyline',
+        style: 'polyline',
         title: 'Draw a polyline'
       },
       {
         name: 'polygon',
         type: 'polygon',
+        style: 'polygon',
         title: 'Draw a polygon'
       },
       {
         name: 'rectangle',
         type: 'rectangle',
+        style: 'rectangle',
         title: 'Draw a rectangle'
       },
       {
         name: 'circle',
         type: 'circle',
+        style: 'circle',
         title: 'Draw a circle'
       },
       {
         name: 'marker',
         type: 'marker',
+        style: 'marker',
         title: 'Add a marker'
       }
     ]
@@ -1095,7 +1100,23 @@ L.Draw.Polygon = L.Draw.Polyline.extend({
 		if (this._markers.length > 0) {
 			this._markers[0].off('click', this._finishShape);
 		}
-	}
+	},
+
+  _finishShape: function () {
+    var intersects = this._poly.newLatLngIntersects(this._poly.getLatLngs()[0], true);
+
+    if ((!this.options.allowIntersection && intersects) || !this._shapeIsValid()) {
+      this._showErrorTooltip();
+      return;
+    }
+
+    this._map.fire(
+      'draw:polygon-created',
+      { poly: new this.Poly(this._poly.getLatLngs(), this.options.shapeOptions) }
+    );
+    this.disable();
+  }
+
 });
 
 L.Draw.Circle = L.Draw.SimpleShape.extend({
