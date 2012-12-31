@@ -630,6 +630,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 			fill: false,
 			clickable: true
 		},
+    touchtarget : 1.5, // iconSize multiplied by touchtarget = final target size
 		zIndexOffset: 2000 // This should be > than the highest z-index any map layers
 	},
 
@@ -684,7 +685,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 
       if (L.Browser.touch) {
         L.DomEvent
-          .addListener(this._container, 'touchstart', this._onMouseMove, this)
+//          .addListener(this._container, 'touchstart', this._onMouseMove, this)
           .addListener(this._container, 'touchmove', this._onMouseMove, this)
           .addListener(this._container, 'touchend', this._onClick, this);
       }
@@ -720,7 +721,7 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 
     if (L.Browser.touch) {
       L.DomEvent
-        .removeListener(this._container, 'touchstart', this._onMouseMove)
+//        .removeListener(this._container, 'touchstart', this._onMouseMove)
         .removeListener(this._container, 'touchmove', this._onMouseMove)
         .removeListener(this._container, 'touchend', this._onClick);
     }
@@ -774,7 +775,12 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		// Update the mouse marker position
 		this._mouseMarker.setLatLng(latlng);
 
-		L.DomEvent.preventDefault(e.originalEvent);
+//    if (e.changedTouches) {
+//      console.log("touch move");
+//    }
+//    else {
+    L.DomEvent.preventDefault(e);
+//    }
 	},
 
 	_onClick: function (e) {
@@ -787,6 +793,17 @@ L.Draw.Polyline = L.Draw.Feature.extend({
       else {
         latlng = e.target.getLatLng();
       }
+    }
+
+    if (e.changedTouches || e.touches) {
+      this._clearGuides();
+      // The touchend on the container seems to have preference over the touchend on the marker, so we manually check position of the last marker.
+      // This also gives us the opportunity to use a touch target a little bigger than the visual shape, which makes it easier to hit the marker with clumsy fingers
+      if (this._clickedFinishMarker(latlng)) {
+        this._finishShape();
+        return true;
+      }
+
     }
 
 		var markerCount = this._markers.length;
@@ -814,12 +831,29 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 		this._clearGuides();
 	},
 
+  _clickedFinishMarker : function (latlng) {
+    if (this._markers.length > 1) {
+      var m = this._markers[this._markers.length - 1];
+      // This could be improved by considering width and height of the icon separately, instead of just using the bigger one
+      var pointA = this._map.latLngToContainerPoint(latlng);
+      var pointB = this._map.latLngToContainerPoint(m.getLatLng());
+      var length = Math.floor(Math.sqrt(Math.pow((pointB.x - pointA.x), 2) + Math.pow((pointB.y - pointA.y), 2)));
+      var size = m.options.icon.options.iconSize;
+      if (length < Math.max(size.x, size.y) * this.options.touchtarget) {
+        return true;
+      }
+    }
+    return false;
+  },
+
 	_updateMarkerHandler: function () {
 		// The last marker shold have a click handler to close the polyline
 		if (this._markers.length > 1) {
 			this._markers[this._markers.length - 1].on('click', this._finishShape, this);
       if (L.Browser.touch) {
-        this._markers[this._markers.length - 2].on('touchend', this._finishShape);
+        this._markers[this._markers.length - 1].on('touchmove', this._finishShape, this);
+        this._markers[this._markers.length - 1].on('touchstart', this._finishShape, this);
+        this._markers[this._markers.length - 1].on('touchend', this._finishShape, this);
       }
 		}
 		
@@ -828,6 +862,8 @@ L.Draw.Polyline = L.Draw.Feature.extend({
 			this._markers[this._markers.length - 2].off('click', this._finishShape);
       if (L.Browser.touch) {
         this._markers[this._markers.length - 2].off('touchend', this._finishShape);
+        this._markers[this._markers.length - 2].on('touchmove', this._finishShape);
+        this._markers[this._markers.length - 2].on('touchstart', this._finishShape);
       }
 		}
 	},
@@ -1695,13 +1731,13 @@ L.Edit.Feature = L.Handler.extend({
 L.Edit.SimpleShape = L.Handler.extend({
 	options: {
 		moveIcon: new L.DivIcon({
-			iconSize: new L.Point(30, 30),
-//      iconSize: L.Browser.touch ? new L.Point(20, 20) : new L.Point(10, 10),
+//			iconSize: new L.Point(30, 30),
+      iconSize: L.Browser.touch ? new L.Point(30, 30) : new L.Point(10, 10),
 			className: 'leaflet-div-icon leaflet-editing-icon leaflet-edit-move'
 		}),
 		resizeIcon: new L.DivIcon({
-			iconSize: new L.Point(30, 30),
-//      iconSize: L.Browser.touch ? new L.Point(20, 20) : new L.Point(10, 10),
+//			iconSize: new L.Point(30, 30),
+      iconSize: L.Browser.touch ? new L.Point(30, 30) : new L.Point(10, 10),
       className: 'leaflet-div-icon leaflet-editing-icon leaflet-edit-resize'
 		})
 	},

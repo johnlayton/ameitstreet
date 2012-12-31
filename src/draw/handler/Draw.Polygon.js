@@ -59,5 +59,21 @@ L.Draw.Polygon = L.Draw.Polyline.extend({
 		if (this._markers.length > 0) {
 			this._markers[0].off('click', this._finishShape);
 		}
-	}
+	},
+
+  _finishShape: function () {
+    var intersects = this._poly.newLatLngIntersects(this._poly.getLatLngs()[0], true);
+
+    if ((!this.options.allowIntersection && intersects) || !this._shapeIsValid()) {
+      this._showErrorTooltip();
+      return;
+    }
+
+    this._map.fire(
+      'draw:polygon-created',
+      { poly: new this.Poly(this._poly.getLatLngs(), this.options.shapeOptions) }
+    );
+    this.disable();
+  }
+
 });

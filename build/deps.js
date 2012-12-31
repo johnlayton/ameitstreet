@@ -31,6 +31,7 @@ var deps = {
       'edit/handler/Delete.Feature.js',
       'edit/handler/Edit.Feature.js',
       'edit/handler/Edit.SimpleShape.js',
+//      'edit/handler/Edit.Polyline.js',
       'edit/handler/Edit.Circle.js',
       'edit/handler/Edit.Rectangle.js'
 		],

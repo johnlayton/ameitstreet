@@ -3,13 +3,13 @@
 L.Edit.SimpleShape = L.Handler.extend({
 	options: {
 		moveIcon: new L.DivIcon({
-			iconSize: new L.Point(30, 30),
-//      iconSize: L.Browser.touch ? new L.Point(20, 20) : new L.Point(10, 10),
+//			iconSize: new L.Point(30, 30),
+      iconSize: L.Browser.touch ? new L.Point(30, 30) : new L.Point(10, 10),
 			className: 'leaflet-div-icon leaflet-editing-icon leaflet-edit-move'
 		}),
 		resizeIcon: new L.DivIcon({
-			iconSize: new L.Point(30, 30),
-//      iconSize: L.Browser.touch ? new L.Point(20, 20) : new L.Point(10, 10),
+//			iconSize: new L.Point(30, 30),
+      iconSize: L.Browser.touch ? new L.Point(30, 30) : new L.Point(10, 10),
       className: 'leaflet-div-icon leaflet-editing-icon leaflet-edit-resize'
 		})
 	},
