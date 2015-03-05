@@ -22,7 +22,8 @@ task('lint', function () {
 });
 
 desc('Combine and compress source files');
-task('build', ['lint'], function () {
+//task('build', ['lint'], function () {
+task('build', [], function () {
 	var pathPart = 'dist/leaflet.draw',
 		srcPath = pathPart + '-src.js',
 		path = pathPart + '.js';
